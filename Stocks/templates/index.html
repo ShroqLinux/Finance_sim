@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Turn-Based Stock Sim</title>
+    <style>
+        body { font-family: sans-serif; max-width: 600px; margin: 50px auto; line-height: 1.6; }
+        .stats { background: #f4f4f4; padding: 20px; border-radius: 8px; }
+        .controls { margin-top: 20px; }
+        button { padding: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Stock Trader Sim</h1>
+    
+    <div id="setup">
+        <input type="text" id="symbol" placeholder="Ticker (e.g. AAPL)" value="AAPL">
+        <input type="number" id="start_cash" placeholder="Starting Cash" value="10000">
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="game" style="display:none;">
+        <div class="stats">
+            <h2 id="current_date">Date: ---</h2>
+            <p>Stock Price: $<span id="price">0</span> 
+            (<span id="pct_change">0</span>%)</p>
+            <hr>
+            <p>Cash: $<span id="cash">0</span></p>
+            <p>Shares Held: <span id="holdings">0</span> 
+            (Value: $<span id="holdings_value">0</span>)</p>
+            <hr>
+            <h3>Total Net Worth: $<span id="net_worth">0</span></h3>
+        </div>
+
+        <div class="controls">
+            <input type="number" id="amount" value="10" min="1">
+            <button onclick="trade('buy')" style="background:#d4edda">Buy</button>
+            <button onclick="trade('sell')" style="background:#f8d7da">Sell</button>
+            <button onclick="nextTurn()" style="float:right">Next Month ➔</button>
+        </div>
+    </div>
+
+    <script>
+        async function updateUI(data) {
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('game').style.display = 'block';
+            
+            document.getElementById('current_date').innerText = "Date: " + data.date;
+            document.getElementById('price').innerText = data.price;
+            
+            // Handle Percentage Change Display
+            const pctEl = document.getElementById('pct_change');
+            pctEl.innerText = (data.pct_change > 0 ? "+" : "") + data.pct_change;
+            pctEl.style.color = data.pct_change >= 0 ? "green" : "red";
+
+            document.getElementById('cash').innerText = data.cash.toLocaleString();
+            document.getElementById('holdings').innerText = data.holdings;
+            document.getElementById('holdings_value').innerText = data.holdings_value.toLocaleString();
+            document.getElementById('net_worth').innerText = data.total_net_worth.toLocaleString();
+        }
+
+        async function startGame() {
+            const res = await fetch('/init', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    symbol: document.getElementById('symbol').value,
+                    cash: document.getElementById('start_cash').value
+                })
+            });
+            updateUI(await res.json());
+        }
+
+        async function nextTurn() {
+            const res = await fetch('/next', {method: 'POST'});
+            updateUI(await res.json());
+        }
+
+        async function trade(action) {
+            const res = await fetch('/trade', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({
+                    action: action,
+                    amount: document.getElementById('amount').value
+                })
+            });
+            updateUI(await res.json());
+        }
+    </script>
+</body>
+</html>
