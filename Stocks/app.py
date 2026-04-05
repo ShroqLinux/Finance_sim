@@ -83,6 +83,9 @@ def trade():
     portfolio = session.get("portfolio", {})
     
     # SAFETY CHECK
+    if amount <= 0:
+        return jsonify({"error": "Trade amount must be greater than zero."}), 400
+
     if not history or step >= len(history):
         return jsonify({"error": "No market data available to trade."}), 400
     
